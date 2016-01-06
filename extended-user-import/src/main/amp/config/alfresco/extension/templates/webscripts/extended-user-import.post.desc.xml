@@ -1,0 +1,7 @@
+<webscript>
+    <shortname>Extended user import</shortname>
+    <description></description>
+    <url>/extended-user-import</url>
+    <authentication>admin</authentication>
+    <format default="json"></format>
+</webscript>
