@@ -4,6 +4,8 @@ var ExtendedUserImport = {
 	csvDelimiter: ",",
 	
 	run: function() {
+	    
+	    this.log('Starting ... ');
 	
 	var csvContent = null;
 	for each (field in formdata.fields)
@@ -35,6 +37,7 @@ var ExtendedUserImport = {
 	var csvData = [[]];
 	var matchingGroups = null;
 	while (matchingGroups = csvPattern.exec( csvContent )){
+	    this.log('matchingGroups.length: ' + matchingGroups.length);
 	    if (matchingGroups.length<=1) {
 		continue;
 	    }
@@ -63,6 +66,11 @@ var ExtendedUserImport = {
 	
 	this.response.success = true;
     },
+    
+    log: function(message) {
+	logger.log('ExtendedUserImport: ' + message);
+    },
+    
     response: {
 	success: false,
     	message: null
