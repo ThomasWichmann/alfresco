@@ -1,1 +1,3 @@
-"aaa","bbb",ccc
+username,firstname,lastname,email,password,organization,groups,sites
+testusername6,firstname,lastname,e-mail,password,organization,"SITE_ADMINISTRATORS, ADMINISTRATORS, SiteConsumer, test","test:test, swsdp:SiteConsumer"
+

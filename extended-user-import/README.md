@@ -8,6 +8,13 @@ See webscript description for details src/main/amp/config/alfresco/extension/tem
 
 curl -F "file=<./src/test/resources/example-users.csv" -F isDryRun=true  "http://admin:admin@localhost:8080/alfresco/service/extended-user-import"
 
+Checks imported user result:
+http://localhost:8080/alfresco/service/api/people
+Check existing groups:
+http://localhost:8080/alfresco/service/api/groups
+Check existing sites:
+http://localhost:8080/alfresco/service/api/sites
+
 ## Building
 
 Run Alfresco locally with AMP loaded:

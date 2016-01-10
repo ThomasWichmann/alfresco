@@ -1,27 +1,77 @@
 var ExtendedUserImport = {
 	
 	isDryRun: false,
+	isVerbose: false,
+	setAccountEnabled: true,
+	notifyByEmail: false,
 	csvDelimiter: ",",
 	
+	csv: {
+	    headers: null,
+	    data: null
+	},
+
+	    response: {
+		success: false,
+	    	messages: []
+	    },
+
 	run: function() {
-	    
+	    	
+	var csvContent = this.loadParameters();
+
 	    this.log('Starting ... ');
+
+	    this.loadCsv(csvContent);
+	    if (this.isVerbose) {
+		this.response.csv = this.csv;
+	    }
+	    
+	this.processData();
+	
+	this.response.success = true;
+	
+	return this.response;
+    },
+    
+    loadParameters: function(csvContent) {
 	
 	var csvContent = null;
+
 	for each (field in formdata.fields)
 	{
 	  if (field.name == "file")
 	  {
-	      // this.response.message = field.filename + new
-		// String(field.content);
 	      csvContent = field.value;
 	  } else if (field.name == "isDryRun")
 	  {
-	      this.isDryRun = field.value;
+	      this.isDryRun = this.toBoolean(field.value);
+	  } else if (field.name == "isVerbose")
+	  {
+	      this.isVerbose = this.toBoolean(field.value);
+	  } else if (field.name == "setAccountEnabled")
+	  {
+	      this.setAccountEnabled = this.toBoolean(field.value);
+	  } else if (field.name == "notifyByEmail")
+	  {
+	      this.notifyByEmail = this.toBoolean(field.value);
 	  }
-	  this.response.message += field.name + "=" + field.value;
+	  
+	  this.log('Given parameters: ' + field.name + "=" + field.value);
+	  if (this.toBoolean(field.value)) {
+		  this.log('enabled parameters: ' + field.name + "=" + field.value);
+	  }
 	}
 	
+	return csvContent;
+    },
+    
+    toBoolean: function(value) {
+	return value != 0;
+    },
+    
+    loadCsv: function(csvContent) {
+
 	// Create a regular expression to parse the CSV values.
 	var csvPattern = new RegExp(
 	            (
@@ -34,20 +84,25 @@ var ExtendedUserImport = {
 	            ),
 	            "gi"
 	            );
-	var csvData = [[]];
+	this.csv.data = [[]];
 	var matchingGroups = null;
+	var isHeaderRow = true;
 	while (matchingGroups = csvPattern.exec( csvContent )){
-	    this.log('matchingGroups.length: ' + matchingGroups.length);
-	    if (matchingGroups.length<=1) {
-		continue;
-	    }
 	    var strMatchedDelimiter = matchingGroups[ 1 ];
 	    if (
 		    strMatchedDelimiter.length &&
 		    (strMatchedDelimiter != this.csvDelimiter)
 	    ){
 		// new row
-		csvData.push( [] );
+		if (isHeaderRow) {
+		    this.csv.headers = this.csv.data.shift();
+		    isHeaderRow = false;
+		} else {
+		    if (this.csv.data[ this.csv.data.length - 1 ].length != this.csv.headers.length) {
+			this.log('Row does contain insufficient number of columns: ' + this.csv.data.pop());
+		    }
+		}
+		this.csv.data.push( [] );
 	    }
 	    // value (quoted or unquoted).
 	    if (matchingGroups[ 2 ]){
@@ -60,24 +115,82 @@ var ExtendedUserImport = {
 		var strMatchedValue = matchingGroups[ 3 ];
 	    }
 
-	    csvData[ csvData.length - 1 ].push( strMatchedValue );
+	    this.csv.data[ this.csv.data.length - 1 ].push( strMatchedValue );
 	}
-	this.response.csvData = csvData;
-	
-	this.response.success = true;
-    },
+	    if (this.csv.data[ this.csv.data.length - 1 ].length != this.csv.headers.length) {
+		this.log('Row does contain insufficient number of columns: ' + this.csv.data.pop());
+	    }
+    },    
     
     log: function(message) {
-	logger.log('ExtendedUserImport: ' + message);
+	if (this.isVerbose) {
+	    logger.log('ExtendedUserImport: ' + message);
+	    this.response.messages.push(message);
+	}
     },
     
-    response: {
-	success: false,
-    	message: null
-    },
+    processData:function() {
+	for each(var row in this.csv.data){
+	    var data = [];
+	    //this.log('processData: ' + row);
+	    for (var i=0; i<this.csv.headers.length; i++){
+		data[this.csv.headers[i]] = row[i];
+		this.log('processData: ' + this.csv.headers[i] + ':' + row[i]);
+	    }
+	    this.log('processData: ' + jsonUtils.toJSONString(data));
 
+	    if (people.getPerson(data['username'])) {
+		this.log('Username already exists: ' + data['username']);
+	    } else {
+		var user;
+		if (this.isDryRun) {
+		    user = people.getPerson(data['username']);
+		    this.log('Found user: ' + user);
+		} else {
+		    user = people.createPerson(data['username'], data['firstname'], data['lastname'], data['email'], data['company'], this.setAccountEnabled, this.notifyByEmail);
+		    user.properties['organization'] =  data['organization'];
+		    user.save();
+		    this.log('Added user: ' + user);
+		}
+		
+		for each(var group in data['groups'].split(',')) {
+		    var cleanedGroup = group.trim();
+		    if (cleanedGroup) {
+			var groupNode = people.getGroup(cleanedGroup);
+			    this.log('found group: ' + groupNode);
+			if(groupNode){
+			    this.log('Added group: ' + groupNode);
+			    if (!this.isDryRun) {
+				    people.addAuthority(groupNode, user);
+			    }
+			} else {
+			    this.log('Group not found: ' + cleanedGroup);
+			}
+		    }
+		}
+
+		for each(var site in data['sites'].split(',')) {
+		    var siteData = site.split(':');
+		    var cleanedSite = siteData[0].trim();
+		    var cleanedSiteRole = siteData[1].trim();
+		    if (cleanedSite) {
+			var siteNode = siteService.getSite(cleanedSite);
+			if(siteNode){
+			    this.log('Added to site: ' + cleanedSite);
+			    if (!this.isDryRun) {
+				siteNode.setMembership(data['username'], cleanedSiteRole);
+			    }
+			} else {
+			    this.log('Site not found: ' + cleanedSite);
+			}
+		    }
+		}
+		
+	    }
+
+	}
+    }
+    
 }
 
-ExtendedUserImport.run();
-
-model["response"] = ExtendedUserImport.response;
+model["response"] = ExtendedUserImport.run();

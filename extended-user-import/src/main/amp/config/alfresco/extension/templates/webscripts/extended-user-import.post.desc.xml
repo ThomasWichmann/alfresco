@@ -1,6 +1,12 @@
 <webscript>
     <shortname>Extended user import</shortname>
-    <description></description>
+    <description>Creates users and also adds them to groups and sites.
+    Parameters (boolean values are 1 for true and 0 for false):
+  	isDryRun: default 0,
+	isVerbose: default 0,
+	setAccountEnabled: default 1,
+	notifyByEmail: default 0
+    </description>
     <url>/extended-user-import</url>
     <authentication>admin</authentication>
     <format default="json"></format>
