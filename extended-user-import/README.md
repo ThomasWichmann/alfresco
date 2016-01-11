@@ -6,7 +6,7 @@ See webscript description for details src/main/amp/config/alfresco/extension/tem
 
 ## Example call
 
-curl -F "file=<./src/test/resources/example-users.csv" -F isDryRun=true  "http://admin:admin@localhost:8080/alfresco/service/extended-user-import"
+curl -F isDryRun=0 -F isVerbose=1 -F "file=<./src/test/resources/example-users.csv" "http://admin:admin@localhost:8080/alfresco/service/extended-user-import"
 
 Checks imported user result:
 http://localhost:8080/alfresco/service/api/people

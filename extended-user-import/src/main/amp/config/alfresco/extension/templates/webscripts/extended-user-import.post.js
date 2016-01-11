@@ -24,7 +24,7 @@ var ExtendedUserImport = {
 
 	    this.loadCsv(csvContent);
 	    if (this.isVerbose) {
-		this.response.csv = this.csv;
+		//this.response.csv = this.csv;
 	    }
 	    
 	this.processData();
@@ -57,9 +57,9 @@ var ExtendedUserImport = {
 	      this.notifyByEmail = this.toBoolean(field.value);
 	  }
 	  
-	  this.log('Given parameters: ' + field.name + "=" + field.value);
 	  if (this.toBoolean(field.value)) {
-		  this.log('enabled parameters: ' + field.name + "=" + field.value);
+//		  this.log('enabled parameters: ' + field.name + "=" + field.value);
+//		  this.log('Given parameters: ' + field.name + "=" + field.value);
 	  }
 	}
 	
@@ -113,6 +113,9 @@ var ExtendedUserImport = {
 	    } else {
 		// non-quoted value.
 		var strMatchedValue = matchingGroups[ 3 ];
+		if (strMatchedValue) {
+			strMatchedValue = strMatchedValue.trim();
+		}
 	    }
 
 	    this.csv.data[ this.csv.data.length - 1 ].push( strMatchedValue );
@@ -132,12 +135,12 @@ var ExtendedUserImport = {
     processData:function() {
 	for each(var row in this.csv.data){
 	    var data = [];
-	    //this.log('processData: ' + row);
+	    // this.log('processData: ' + row);
 	    for (var i=0; i<this.csv.headers.length; i++){
 		data[this.csv.headers[i]] = row[i];
-		this.log('processData: ' + this.csv.headers[i] + ':' + row[i]);
+		//this.log('processData: ' + this.csv.headers[i] + ':' + row[i]);
 	    }
-	    this.log('processData: ' + jsonUtils.toJSONString(data));
+	    //this.log('processData: ' + jsonUtils.toJSONString(data));
 
 	    if (people.getPerson(data['username'])) {
 		this.log('Username already exists: ' + data['username']);
@@ -145,45 +148,52 @@ var ExtendedUserImport = {
 		var user;
 		if (this.isDryRun) {
 		    user = people.getPerson(data['username']);
-		    this.log('Found user: ' + user);
 		} else {
-		    user = people.createPerson(data['username'], data['firstname'], data['lastname'], data['email'], data['company'], this.setAccountEnabled, this.notifyByEmail);
+		    user = people.createPerson(data['username'], data['firstname'], data['lastname'], data['email'], data['password'], this.setAccountEnabled, this.notifyByEmail);
 		    user.properties['organization'] =  data['organization'];
 		    user.save();
-		    this.log('Added user: ' + user);
+		    this.log('Added user: ' + data['username']);
 		}
-		
-		for each(var group in data['groups'].split(',')) {
-		    var cleanedGroup = group.trim();
-		    if (cleanedGroup) {
-			var groupNode = people.getGroup(cleanedGroup);
-			    this.log('found group: ' + groupNode);
-			if(groupNode){
-			    this.log('Added group: ' + groupNode);
-			    if (!this.isDryRun) {
-				    people.addAuthority(groupNode, user);
+				
+		var groupsData = data['groups'];
+		for each(var group in groupsData.split(',')) {
+			if (group.trim()) {
+			    var cleanedGroup = 'GROUP_' + group.trim();
+			    if (cleanedGroup) {
+				var groupNode = people.getGroup(cleanedGroup);
+				    //this.log('found group: ' + groupNode);
+				if(groupNode){
+				    if (!this.isDryRun) {
+					    this.log('Added to group: ' + cleanedGroup);
+					    people.addAuthority(groupNode, user);
+				    }
+				} else {
+				    this.log('Group not found: ' + cleanedGroup);
+				}
 			    }
-			} else {
-			    this.log('Group not found: ' + cleanedGroup);
 			}
-		    }
 		}
 
 		for each(var site in data['sites'].split(',')) {
+		    if (site) {
 		    var siteData = site.split(':');
+		    	
 		    var cleanedSite = siteData[0].trim();
 		    var cleanedSiteRole = siteData[1].trim();
 		    if (cleanedSite) {
 			var siteNode = siteService.getSite(cleanedSite);
 			if(siteNode){
-			    this.log('Added to site: ' + cleanedSite);
 			    if (!this.isDryRun) {
+				    this.log('Added to site: ' + cleanedSite);
 				siteNode.setMembership(data['username'], cleanedSiteRole);
 			    }
 			} else {
 			    this.log('Site not found: ' + cleanedSite);
 			}
 		    }
+		    
+		    }
+
 		}
 		
 	    }
