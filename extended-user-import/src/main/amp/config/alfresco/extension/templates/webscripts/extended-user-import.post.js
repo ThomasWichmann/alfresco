@@ -23,9 +23,6 @@ var ExtendedUserImport = {
 	    this.log('Starting ... ');
 
 	    this.loadCsv(csvContent);
-	    if (this.isVerbose) {
-		//this.response.csv = this.csv;
-	    }
 	    
 	this.processData();
 	
@@ -57,10 +54,6 @@ var ExtendedUserImport = {
 	      this.notifyByEmail = this.toBoolean(field.value);
 	  }
 	  
-	  if (this.toBoolean(field.value)) {
-//		  this.log('enabled parameters: ' + field.name + "=" + field.value);
-//		  this.log('Given parameters: ' + field.name + "=" + field.value);
-	  }
 	}
 	
 	return csvContent;
@@ -135,12 +128,10 @@ var ExtendedUserImport = {
     processData:function() {
 	for each(var row in this.csv.data){
 	    var data = [];
-	    // this.log('processData: ' + row);
 	    for (var i=0; i<this.csv.headers.length; i++){
 		data[this.csv.headers[i]] = row[i];
-		//this.log('processData: ' + this.csv.headers[i] + ':' + row[i]);
 	    }
-	    //this.log('processData: ' + jsonUtils.toJSONString(data));
+	    // this.log('processData: ' + jsonUtils.toJSONString(data));
 
 	    if (people.getPerson(data['username'])) {
 		this.log('Username already exists: ' + data['username']);
@@ -161,7 +152,6 @@ var ExtendedUserImport = {
 			    var cleanedGroup = 'GROUP_' + group.trim();
 			    if (cleanedGroup) {
 				var groupNode = people.getGroup(cleanedGroup);
-				    //this.log('found group: ' + groupNode);
 				if(groupNode){
 				    if (!this.isDryRun) {
 					    this.log('Added to group: ' + cleanedGroup);
