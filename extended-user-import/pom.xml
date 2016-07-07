@@ -64,6 +64,11 @@
             <artifactId>alfresco-repository</artifactId>
         </dependency>
     </dependencies>
+    <build>
+          <defaultGoal>clean package</defaultGoal>
+    </build>
+    
+    
 
     <profiles>
         <!--
