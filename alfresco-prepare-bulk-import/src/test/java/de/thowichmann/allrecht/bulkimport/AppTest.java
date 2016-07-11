@@ -33,6 +33,8 @@ public class AppTest
      */
     public void testApp()
     {
+    	String[] args = {"-i", "src/test/resources/test.csv"};
+    	App.main(args);
         assertTrue( true );
     }
 }

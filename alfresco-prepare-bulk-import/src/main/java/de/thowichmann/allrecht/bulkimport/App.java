@@ -1,11 +1,17 @@
 package de.thowichmann.allrecht.bulkimport;
 
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVRecord;
 
 /**
  * Hello world!
@@ -29,6 +35,16 @@ public class App
 			String inputPath = commandLine.getOptionValue(OPTION_INPUT_FILE);
 			logger.info("Read CSV input from %s", inputPath);
 					
+			
+			Reader in = new FileReader(inputPath);
+			Iterable<CSVRecord> records = CSVFormat.RFC4180.withFirstRecordAsHeader().parse(in);
+			for (CSVRecord record : records) {
+
+			}
+
+			
+		} catch (IOException e) {
+			throw new RuntimeException(e);
 		} catch (ParseException e) {
 			throw new RuntimeException(e);
 		}
